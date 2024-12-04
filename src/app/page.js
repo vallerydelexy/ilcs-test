@@ -1,20 +1,42 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import ParkingMap from '../components/ParkingMap'
 import BookingForm from '../components/BookingForm'
 import BookingDetails from '../components/BookingDetails'
 
 export default function ParkingManagementSystem() {
-  const [parkingSpots, setParkingSpots] = useState(Array(20).fill(false))
+  const [parkingSpots, setParkingSpots] = useState([
+    { id: 0, length: 5, width: 2.5, isOccupied: false },
+    { id: 1, length: 5, width: 2.5, isOccupied: false },
+    { id: 2, length: 6, width: 3, isOccupied: false },
+    { id: 3, length: 6, width: 3, isOccupied: false },
+    { id: 4, length: 7, width: 3.5, isOccupied: false },
+    { id: 5, length: 7, width: 3.5, isOccupied: false },
+    { id: 6, length: 5.5, width: 2.7, isOccupied: false },
+    { id: 7, length: 5.5, width: 2.7, isOccupied: false },
+    { id: 8, length: 6.5, width: 3.2, isOccupied: false },
+    { id: 9, length: 6.5, width: 3.2, isOccupied: false },
+  ])
   const [currentBooking, setCurrentBooking] = useState(null)
+  const [filters, setFilters] = useState({ length: 0, width: 0 })
 
-  const handleBooking = (booking) => {
-    const newParkingSpots = [...parkingSpots]
-    newParkingSpots[booking.spotId] = true
-    setParkingSpots(newParkingSpots)
+  const handleBooking = useCallback((booking) => {
+    setParkingSpots(prevSpots => 
+      prevSpots.map(spot =>
+        spot.id === booking.spotId ? { ...spot, isOccupied: true } : spot
+      )
+    )
     setCurrentBooking(booking)
-  }
+  }, [])
+
+  const handleFilterChange = useCallback((newFilters) => {
+    setFilters(newFilters)
+  }, [])
+
+  const filteredSpots = parkingSpots.filter(
+    spot => spot.length >= filters.length && spot.width >= filters.width && !spot.isOccupied
+  )
 
   return (
     <div className="container mx-auto p-4">
@@ -26,7 +48,11 @@ export default function ParkingManagementSystem() {
         </div>
         <div>
           <h2 className="text-xl font-semibold mb-4">Book a Parking Spot</h2>
-          <BookingForm onBooking={handleBooking} parkingSpots={parkingSpots} />
+          <BookingForm
+            onBooking={handleBooking}
+            parkingSpots={filteredSpots}
+            onFilterChange={handleFilterChange}
+          />
         </div>
       </div>
       {currentBooking && (

@@ -1,20 +1,38 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-const BookingForm = ({ onBooking, parkingSpots }) => {
+const BookingForm = ({ onBooking, parkingSpots, onFilterChange }) => {
   const [name, setName] = useState('')
   const [vehicleNumber, setVehicleNumber] = useState('')
+  const [vehicleLength, setVehicleLength] = useState('')
+  const [vehicleWidth, setVehicleWidth] = useState('')
   const [duration, setDuration] = useState(1)
   const [spotId, setSpotId] = useState('')
+
+  const debouncedFilterChange = useCallback(
+    debounce((length, width) => {
+      onFilterChange({
+        length: parseFloat(length) || 0,
+        width: parseFloat(width) || 0
+      })
+    }, 300),
+    [onFilterChange]
+  )
+
+  useEffect(() => {
+    debouncedFilterChange(vehicleLength, vehicleWidth)
+  }, [vehicleLength, vehicleWidth, debouncedFilterChange])
 
   const handleSubmit = (e) => {
     e.preventDefault()
     const booking = {
       name,
       vehicleNumber,
+      vehicleLength: parseFloat(vehicleLength),
+      vehicleWidth: parseFloat(vehicleWidth),
       duration,
       spotId: parseInt(spotId),
       startTime: new Date().toISOString(),
@@ -23,6 +41,8 @@ const BookingForm = ({ onBooking, parkingSpots }) => {
     // Reset form
     setName('')
     setVehicleNumber('')
+    setVehicleLength('')
+    setVehicleWidth('')
     setDuration(1)
     setSpotId('')
   }
@@ -50,6 +70,30 @@ const BookingForm = ({ onBooking, parkingSpots }) => {
         />
       </div>
       <div>
+        <Label htmlFor="vehicleLength">Vehicle Length (m)</Label>
+        <Input
+          id="vehicleLength"
+          type="number"
+          step="0.1"
+          min="0"
+          value={vehicleLength}
+          onChange={(e) => setVehicleLength(e.target.value)}
+          required
+        />
+      </div>
+      <div>
+        <Label htmlFor="vehicleWidth">Vehicle Width (m)</Label>
+        <Input
+          id="vehicleWidth"
+          type="number"
+          step="0.1"
+          min="0"
+          value={vehicleWidth}
+          onChange={(e) => setVehicleWidth(e.target.value)}
+          required
+        />
+      </div>
+      <div>
         <Label htmlFor="duration">Duration (hours)</Label>
         <Input
           id="duration"
@@ -67,12 +111,10 @@ const BookingForm = ({ onBooking, parkingSpots }) => {
             <SelectValue placeholder="Select a parking spot" />
           </SelectTrigger>
           <SelectContent>
-            {parkingSpots.map((isOccupied, index) => (
-              !isOccupied && (
-                <SelectItem key={index} value={index.toString()}>
-                  Spot {index + 1}
-                </SelectItem>
-              )
+            {parkingSpots.map((spot) => (
+              <SelectItem key={spot.id} value={spot.id.toString()}>
+                Spot {spot.id + 1} ({spot.length}m x {spot.width}m)
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -80,6 +122,19 @@ const BookingForm = ({ onBooking, parkingSpots }) => {
       <Button type="submit">Book Parking Spot</Button>
     </form>
   )
+}
+
+// Debounce function
+function debounce(func, wait) {
+  let timeout
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout)
+      func(...args)
+    }
+    clearTimeout(timeout)
+    timeout = setTimeout(later, wait)
+  }
 }
 
 export default BookingForm

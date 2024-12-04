@@ -2,34 +2,40 @@ import React from 'react'
 import { Stage, Layer, Rect, Text } from 'react-konva'
 
 const ParkingMap = ({ parkingSpots }) => {
-  const spotSize = 50
-  const spotsPerRow = 5
+  const maxSpotSize = Math.max(...parkingSpots.map(spot => Math.max(spot.length, spot.width)))
+  const scale = 100 / maxSpotSize
+  const padding = 10
+
+  const stageWidth = Math.ceil(Math.sqrt(parkingSpots.length)) * (maxSpotSize * scale + padding)
+  const stageHeight = Math.ceil(parkingSpots.length / Math.ceil(Math.sqrt(parkingSpots.length))) * (maxSpotSize * scale + padding)
 
   return (
-    <Stage width={spotSize * spotsPerRow} height={spotSize * Math.ceil(parkingSpots.length / spotsPerRow)}>
+    <Stage width={stageWidth} height={stageHeight}>
       <Layer>
-        {parkingSpots.map((isOccupied, index) => {
-          const x = (index % spotsPerRow) * spotSize
-          const y = Math.floor(index / spotsPerRow) * spotSize
+        {parkingSpots.map((spot, index) => {
+          const row = Math.floor(index / Math.ceil(Math.sqrt(parkingSpots.length)))
+          const col = index % Math.ceil(Math.sqrt(parkingSpots.length))
+          const x = col * (maxSpotSize * scale + padding)
+          const y = row * (maxSpotSize * scale + padding)
 
           return (
-            <React.Fragment key={index}>
+            <React.Fragment key={spot.id}>
               <Rect
                 x={x}
                 y={y}
-                width={spotSize}
-                height={spotSize}
-                fill={isOccupied ? '#FF6B6B' : '#4ECB71'}
+                width={spot.length * scale}
+                height={spot.width * scale}
+                fill={spot.isOccupied ? '#FF6B6B' : '#4ECB71'}
                 stroke="#333"
                 strokeWidth={1}
               />
               <Text
                 x={x}
                 y={y}
-                width={spotSize}
-                height={spotSize}
-                text={(index + 1).toString()}
-                fontSize={16}
+                width={spot.length * scale}
+                height={spot.width * scale}
+                text={`${spot.id + 1}\n${spot.length}x${spot.width}`}
+                fontSize={12}
                 fontFamily="Arial"
                 fill="#FFF"
                 align="center"
